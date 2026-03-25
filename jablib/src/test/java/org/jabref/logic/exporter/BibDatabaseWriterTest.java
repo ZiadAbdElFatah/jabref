@@ -752,28 +752,30 @@ class BibDatabaseWriterTest {
         databaseWriter.writePartOfDatabase(bibtexContext, List.of());
 
         // The order should be kept (the cleanups are a list, not a set)
-        String expected = "@Comment{jabref-meta: saveActions:enabled;" + OS.NEWLINE
-                + "title[lower_case]" + OS.NEWLINE
-                + "journal[title_case]" + OS.NEWLINE
-                + "day[upper_case]" + OS.NEWLINE
-                + ";}" + OS.NEWLINE
-                + OS.NEWLINE
-                + "@Comment{jabref-meta-0.1.0" + OS.NEWLINE
-                + "{" + OS.NEWLINE
-                + "  \"saveActions\": {" + OS.NEWLINE
-                + "    \"state\": true," + OS.NEWLINE
-                + "    \"title\": [" + OS.NEWLINE
-                + "      \"lower_case\"" + OS.NEWLINE
-                + "    ]," + OS.NEWLINE
-                + "    \"journal\": [" + OS.NEWLINE
-                + "      \"title_case\"" + OS.NEWLINE
-                + "    ]," + OS.NEWLINE
-                + "    \"day\": [" + OS.NEWLINE
-                + "      \"upper_case\"" + OS.NEWLINE
-                + "    ]" + OS.NEWLINE
-                + "  }" + OS.NEWLINE
-                + "}" + OS.NEWLINE
-                + "}" + OS.NEWLINE;
+        String expected = """
+                @Comment{jabref-meta: saveActions:enabled;
+                title[lower_case]
+                journal[title_case]
+                day[upper_case]
+                ;}
+
+                @Comment{jabref-meta-0.1.0
+                {
+                  "saveActions": {
+                    "state": true,
+                    "title": [
+                      "lower_case"
+                    ],
+                    "journal": [
+                      "title_case"
+                    ],
+                    "day": [
+                      "upper_case"
+                    ]
+                  }
+                }
+                }
+                """;
 
         assertEquals(expected, stringWriter.toString());
     }
