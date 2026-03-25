@@ -763,11 +763,11 @@ class BibDatabaseWriterTest {
                 {
                   "saveActions": {
                     "state": true,
-                    "title": [
-                      "lower_case"
-                    ],
                     "journal": [
                       "title_case"
+                    ],
+                    "title": [
+                      "lower_case"
                     ],
                     "day": [
                       "upper_case"

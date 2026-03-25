@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,7 +31,9 @@ import org.jabref.logic.citationkeypattern.GlobalCitationKeyPatterns;
 import org.jabref.logic.cleanup.FieldFormatterCleanup;
 import org.jabref.logic.cleanup.FieldFormatterCleanupActions;
 import org.jabref.logic.cleanup.NormalizeWhitespacesCleanup;
+import org.jabref.logic.cleanup.SaveActionsConverter;
 import org.jabref.logic.formatter.bibtexfields.TrimWhitespaceFormatter;
+import org.jabref.logic.importer.util.SaveActionsDTOConverter;
 import org.jabref.logic.os.OS;
 import org.jabref.logic.preferences.CliPreferences;
 import org.jabref.logic.util.strings.StringUtil;
@@ -44,15 +45,14 @@ import org.jabref.model.entry.BibEntry;
 import org.jabref.model.entry.BibEntryType;
 import org.jabref.model.entry.BibEntryTypesManager;
 import org.jabref.model.entry.BibtexString;
-import org.jabref.model.entry.field.Field;
 import org.jabref.model.entry.field.InternalField;
 import org.jabref.model.metadata.MetaData;
+import org.jabref.model.metadata.SaveActionsDTO;
 import org.jabref.model.metadata.SaveOrder;
 import org.jabref.model.metadata.SelfContainedSaveOrder;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.jooq.lambda.Unchecked;
 import org.jspecify.annotations.NonNull;
@@ -286,33 +286,14 @@ public class BibDatabaseWriter {
         writeMetaDataJson(metaData);
     }
 
-    private JsonObject serializeSaveActionsToJson(FieldFormatterCleanupActions saveActions) {
-        JsonObject saveActionsJson = new JsonObject();
-        saveActionsJson.addProperty("state", saveActions.isEnabled());
-
-        Map<Field, List<String>> actionsByField = new LinkedHashMap<>();
-        for (FieldFormatterCleanup action : saveActions.getConfiguredActions()) {
-            actionsByField.computeIfAbsent(action.getField(), _ -> new ArrayList<>())
-                          .add(action.getFormatter().getKey());
-        }
-
-        for (Map.Entry<Field, List<String>> entry : actionsByField.entrySet()) {
-            JsonArray formatters = new JsonArray();
-            for (String formatter : entry.getValue()) {
-                formatters.add(formatter);
-            }
-            saveActionsJson.add(entry.getKey().getName(), formatters);
-        }
-
-        return saveActionsJson;
-    }
-
     protected void writeMetaDataJson(MetaData metaData) throws IOException {
         JsonObject metaDataJson = new JsonObject();
 
         if (metaData.getSaveActions().isPresent()) {
             FieldFormatterCleanupActions saveActions = metaData.getSaveActions().get();
-            metaDataJson.add(MetaData.SAVE_ACTIONS, serializeSaveActionsToJson(saveActions));
+            SaveActionsDTO saveActionsDTO = SaveActionsConverter.toDTO(saveActions);
+            JsonObject saveActionsJson = SaveActionsDTOConverter.toJson(saveActionsDTO);
+            metaDataJson.add(MetaData.SAVE_ACTIONS, saveActionsJson);
         }
 
         if (metaDataJson.isEmpty()) {

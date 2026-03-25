@@ -19,7 +19,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -27,9 +26,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.jabref.logic.bibtex.FieldWriter;
-import org.jabref.logic.cleanup.FieldFormatterCleanup;
 import org.jabref.logic.cleanup.FieldFormatterCleanupActions;
-import org.jabref.logic.cleanup.FieldFormatterCleanupMapper;
+import org.jabref.logic.cleanup.SaveActionsConverter;
 import org.jabref.logic.exporter.BibDatabaseWriter;
 import org.jabref.logic.exporter.SaveConfiguration;
 import org.jabref.logic.groups.GroupsFactory;
@@ -39,6 +37,7 @@ import org.jabref.logic.importer.ParseException;
 import org.jabref.logic.importer.Parser;
 import org.jabref.logic.importer.ParserResult;
 import org.jabref.logic.importer.util.MetaDataParser;
+import org.jabref.logic.importer.util.SaveActionsDTOConverter;
 import org.jabref.logic.l10n.Localization;
 import org.jabref.logic.os.OS;
 import org.jabref.model.database.BibDatabase;
@@ -57,6 +56,7 @@ import org.jabref.model.groups.ExplicitGroup;
 import org.jabref.model.groups.GroupHierarchyType;
 import org.jabref.model.groups.GroupTreeNode;
 import org.jabref.model.metadata.MetaData;
+import org.jabref.model.metadata.SaveActionsDTO;
 import org.jabref.model.util.DummyFileUpdateMonitor;
 import org.jabref.model.util.FileUpdateMonitor;
 
@@ -65,7 +65,6 @@ import com.dd.plist.NSArray;
 import com.dd.plist.NSDictionary;
 import com.dd.plist.NSString;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.github.adr.linked.ADR;
 import org.jspecify.annotations.NonNull;
@@ -306,7 +305,9 @@ public class BibtexParser implements Parser {
 
             parsedJsonMetaData.ifPresent(json -> {
                 if (json.has(MetaData.SAVE_ACTIONS)) {
-                    metaData.setSaveActions(parseSaveActionsFromJson(json.getAsJsonObject(MetaData.SAVE_ACTIONS)));
+                    SaveActionsDTO saveActionsDTO = SaveActionsDTOConverter.fromJson(json.getAsJsonObject(MetaData.SAVE_ACTIONS));
+                    FieldFormatterCleanupActions saveActions = SaveActionsConverter.fromDTO(saveActionsDTO);
+                    metaData.setSaveActions(saveActions);
                 }
             });
         } catch (ParseException exception) {
@@ -424,27 +425,6 @@ public class BibtexParser implements Parser {
         Gson gson = new Gson();
         String content = comment.substring(MetaData.META_FLAG_V1.length());
         return Optional.ofNullable(gson.fromJson(content, JsonObject.class));
-    }
-
-    private FieldFormatterCleanupActions parseSaveActionsFromJson(JsonObject saveActionsJson) {
-        boolean enabled = saveActionsJson.get("state").getAsBoolean();
-        StringBuilder actionsStringBuilder = new StringBuilder();
-        for (Map.Entry<String, JsonElement> entry : saveActionsJson.entrySet()) {
-            // Already parsed before
-            if ("state".equals(entry.getKey())) {
-                continue;
-            }
-            StringJoiner joiner = new StringJoiner(",");
-            for (JsonElement formatter : entry.getValue().getAsJsonArray()) {
-                joiner.add(formatter.getAsString());
-            }
-            actionsStringBuilder.append(entry.getKey())
-                                .append("[")
-                                .append(joiner)
-                                .append(']');
-        }
-        List<FieldFormatterCleanup> actions = FieldFormatterCleanupMapper.parseActions(actionsStringBuilder.toString());
-        return new FieldFormatterCleanupActions(enabled, actions);
     }
 
     /// Adds BibDesk group entries to the JabRef database
