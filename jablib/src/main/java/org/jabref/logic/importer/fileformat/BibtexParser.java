@@ -66,7 +66,6 @@ import com.dd.plist.NSDictionary;
 import com.dd.plist.NSString;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import io.github.adr.linked.ADR;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -763,7 +762,6 @@ public class BibtexParser implements Parser {
         return result;
     }
 
-    @ADR(49)
     private void parseField(BibEntry entry) throws IOException {
         int startLine = line;
         int startColumn = column;
